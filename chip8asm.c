@@ -229,7 +229,10 @@ textToInstruction( const char * text )
 			break;
 		case 2:
 			op |= ( arguments[0] & 0xF ) <<8;
-			op |= ( arguments[1] & 0xFF ) <<4;
+			if ( op & 0x3000 || op & 0x4000 || op & 0x6000 || op & 0x7000 || op & 0xC000)
+				op |= ( arguments[1] & 0xFF );
+			else
+				op |= ( arguments[1] & 0xFF ) <<4;
 			break;
 		case 3:
 			op |= ( arguments[0] & 0xF ) <<8;
