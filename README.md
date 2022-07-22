@@ -24,7 +24,7 @@ JNEQ X Y : Skip if VX not equal VY (0x9XY0)
 
 SETI NNN : Set I to Immediate NNN (0xANNN)
 
-JMPV NNN : Jump to Address Immediate NNN + V) (0xBNNN)
+JMPV NNN : Jump to Address Immediate NNN + V0 (0xBNNN)
 
 RAND X NN: Set VX to a Random Number & NN (0xCXNN)
 
