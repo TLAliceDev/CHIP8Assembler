@@ -1,6 +1,9 @@
 # CHIP8Assembler
 Very simple Assembler for the CHIP-8 Fantasy Console
 
+# Using CHIP8Assembler:
+After compile, simply run it with the source file as its first argument. You can also specifiy an output file as the second argument. If you don't, it'll default to "cart.c8"
+
 # Quick Reference:
 SYSC NNN : Syscall (0x0NNN).
 
