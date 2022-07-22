@@ -18,7 +18,7 @@ SETM X NN: Set VX to Immediate NN (0x6XNN)
 
 ADDM X NN: Add Immediate NN to VX (0x7XNN)
 
-RGOP X Y : Register Operations (See further down for more info, 0x8XYI)
+RGOP X Y : Register Operations (See further down for more info, 0x8XYK)
 
 JNEQ X Y : Skip if VX not equal VY (0x9XY0)
 
@@ -53,3 +53,28 @@ DUMP X   : Stores V0-VX in Memory Starting at I (0xFX55)
 LOAD X   : Loads X Bytes of Data from Memory Starting at I, Storing in V0-VX (0xFX65)
 
 
+# Register Operations:
+
+The RGOP Instruction takes 3 arguments. X, Y and K. 
+
+X and Y represent two register, K represents an operation. RGOP will execute operation K on VX and VY and store the result on VX.
+
+While K is a number, this assembler also gives a few keywords that represent said numbers to make using RGOP easier:
+
+ASSIGN: Sets VX to VY
+
+BWOR: Sets VX to VX | VY (Bitwise OR)
+
+BAND: Sets VX to VX & VY (Bitwise AND)
+
+BXOR: Sets VX to VX ^ VY (Bitwise XOR)
+
+ADD: Sets VX to VX + VY
+
+SUB: Sets VX to VX - VY
+
+LSHIFT: Sets VX to VX>>1
+
+NEGATE: Sets VX to VY-VX
+
+RSHIFT: Sets VX to VX<<1
