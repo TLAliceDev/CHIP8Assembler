@@ -10,9 +10,9 @@ typedef enum{
     SYSC,
     JUMP,
     CALL,
-    NEQM,
-    EQUM,
-    NEQR,
+    JNEM,
+    JEQM,
+    JEQU,
     SETM,
     ADDM,
     RGOP,
@@ -125,7 +125,7 @@ wordCounter(const char* str, const char lim)
 short unsigned int
 getCode( const char* word )
 {
-	const EnumMapper instructionsTable [] = {{"SYSC",SYSC},{"JUMP",JUMP},{"CALL",CALL},{"NEQM",NEQM},{"EQUM",EQUM},{"NEQR",NEQR},{"SETM",SETM},{"ADDM",ADDM},{"RGOP",RGOP},{"JNEQ",JNEQ},{"SETI",SETI},{"JMPV",JMPV},{"RAND",RAND},{"DRAW",DRAW},{"KEYD",KEYD},{"KEYU",KEYU},{"DGET",DGET},{"KEYG",KEYG},{"DSET",DSET},{"ASET",ASET},{"ADDI",ADDI},{"FONT",FONT},{"SBCD",SBCD},{"DUMP",DUMP},{"LOAD",LOAD}};
+	const EnumMapper instructionsTable [] = {{"SYSC",SYSC},{"JUMP",JUMP},{"CALL",CALL},{"JNEM",JNEM},{"JEQM",JEQM},{"JEQU",JEQU},{"SETM",SETM},{"ADDM",ADDM},{"RGOP",RGOP},{"JNEQ",JNEQ},{"SETI",SETI},{"JMPV",JMPV},{"RAND",RAND},{"DRAW",DRAW},{"KEYD",KEYD},{"KEYU",KEYU},{"DGET",DGET},{"KEYG",KEYG},{"DSET",DSET},{"ASET",ASET},{"ADDI",ADDI},{"FONT",FONT},{"SBCD",SBCD},{"DUMP",DUMP},{"LOAD",LOAD}};
 	INST op = wordToEnum( word, instructionsTable, INSTRUCTION_TABLE_SIZE );
 	int option = 0x000;
 	if (op == 0xE) option = 0x09E;
