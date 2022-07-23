@@ -202,6 +202,7 @@ stringSplit( const char * text, const char lim, char*** words)
 	return wordCount;
 }
 
+
 short unsigned int
 textToInstruction( const char * text )
 {
@@ -219,20 +220,22 @@ textToInstruction( const char * text )
 	for (int i = 0; i < wordCount-1; i++)
 		printf("%d ",arguments[i]);
 	printf(")\n");
+	unsigned char firstByte = op >> 12;
+	firstByte &= 0xF;
 	switch (wordCount-1)
 	{
 		case 1:
-			if (op & 0xE000 || op & 0xF000)
-				op |= ( arguments[0] & 0x0F) << 8;
-			else
-				op |= ( arguments[0] & 0x0FFF);
+			unsigned short option = (arguments[0]) & 0x0FFF;
+			if (firstByte == 0xE || firstByte == 0xF)
+				option = ( arguments[0] & 0xF) << 8;
+			op |= option;
 			break;
 		case 2:
 			op |= ( arguments[0] & 0xF ) <<8;
-			if ( op & 0x3000 || op & 0x4000 || op & 0x6000 || op & 0x7000 || op & 0xC000)
+			if ( firstByte == 0x3 || firstByte == 0x4 || firstByte == 0x6 || firstByte == 0x7 || firstByte == 0xC)
 				op |= ( arguments[1] & 0xFF );
 			else
-				op |= ( arguments[1] & 0xFF ) <<4;
+				op |= ( arguments[1] & 0xF ) <<4;
 			break;
 		case 3:
 			op |= ( arguments[0] & 0xF ) <<8;
@@ -244,6 +247,12 @@ textToInstruction( const char * text )
 		free(words[i]);
 	free(words);
 	return op;
+}
+
+unsigned short int
+swapEndianess(unsigned short int x)
+{
+	return (x>>8) | (x << 8);
 }
 
 int 
@@ -264,7 +273,8 @@ assemble( const char* inputName, const char* outputName )
 	destinationFile = fopen(outputName,"w");
 	for (int i = 0; i < n; i++) 
 	{
-		int instruction = textToInstruction(code[i]);
+		unsigned short int instruction = textToInstruction(code[i]);
+		instruction = swapEndianess(instruction);
 		fwrite(&instruction,2,1,destinationFile);
 	}
 	fclose(destinationFile);
