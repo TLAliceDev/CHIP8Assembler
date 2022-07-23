@@ -245,29 +245,29 @@ textToInstruction( const char * text )
 	{
 		case NNN:
 			if (wordCount != 2)
-				printf("Invalid Argument Count: %d. Required: 1",wordCount-1);
+				printf("Invalid Argument Count: %d. Required: 1\n",wordCount-1);
 			op |= arguments[0] & 0xFFF;
 			break;
 		case X:
 			if (wordCount != 2)
-				printf("Invalid Argument Count: %d. Required: 1",wordCount-1);
+				printf("Invalid Argument Count: %d. Required: 1\n",wordCount-1);
 			op |= ( arguments[0] & 0xF ) << 8;
 			break;
 		case XNN:
 			if (wordCount != 3)
-				printf("Invalid Argument Count: %d. Required: 2",wordCount-1);
+				printf("Invalid Argument Count: %d. Required: 2\n",wordCount-1);
 			op |= ( arguments[0] & 0xF  ) <<8;
 			op |= ( arguments[1] & 0xFF );
 			break;
 		case XY:
 			if (wordCount != 3)
-				printf("Invalid Argument Count: %d. Required: 2",wordCount-1);
+				printf("Invalid Argument Count: %d. Required: 2\n",wordCount-1);
 			op |= ( arguments[0] & 0xF  ) <<8;
 			op |= ( arguments[1] & 0xF ) <<4;
 			break;
 		case XYN:
 			if (wordCount != 4)
-				printf("Invalid Argument Count: %d. Required: 3",wordCount-1);
+				printf("Invalid Argument Count: %d. Required: 3\n",wordCount-1);
 			op |= ( arguments[0] & 0xF ) <<8;
 			op |= ( arguments[1] & 0xF ) <<4;
 			op |= ( arguments[2] & 0xF ) ;
