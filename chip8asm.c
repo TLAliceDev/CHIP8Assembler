@@ -6,7 +6,8 @@
 #define REGISTER_OPERATIONS_TABLE_SIZE 9
 #define INVALID (-1)
 
-typedef enum{
+typedef enum
+{
     SYSC,
     JUMP,
     CALL,
@@ -34,7 +35,8 @@ typedef enum{
     LOAD,
 } INST;
 
-typedef enum{
+typedef enum
+{
 	ASSIGN,
 	BWOR,
 	BWAND,
@@ -45,6 +47,15 @@ typedef enum{
 	NEGATE,
 	RSHIFT
 } REGISTER_OPERATIONS;
+
+enum FORMATS
+{
+	NNN,
+	XNN,
+	XY,
+	XYN,
+	X
+};
 
 typedef struct 
 {
@@ -122,11 +133,12 @@ wordCounter(const char* str, const char lim)
 }
 
 
-short unsigned int
+int
 getCode( const char* word )
 {
 	const EnumMapper instructionsTable [] = {{"SYSC",SYSC},{"JUMP",JUMP},{"CALL",CALL},{"JNEM",JNEM},{"JEQM",JEQM},{"JEQU",JEQU},{"SETM",SETM},{"ADDM",ADDM},{"RGOP",RGOP},{"JNEQ",JNEQ},{"SETI",SETI},{"JMPV",JMPV},{"RAND",RAND},{"DRAW",DRAW},{"KEYD",KEYD},{"KEYU",KEYU},{"DGET",DGET},{"KGET",KGET},{"DSET",DSET},{"ASET",ASET},{"ADDI",ADDI},{"FONT",FONT},{"SBCD",SBCD},{"DUMP",DUMP},{"LOAD",LOAD}};
 	INST op = wordToEnum( word, instructionsTable, INSTRUCTION_TABLE_SIZE );
+	if (op == INVALID) return INVALID;
 	int option = 0x000;
 	if (op == 0xE) option = 0x09E;
 	else if (op == 0xF)
@@ -206,10 +218,16 @@ stringSplit( const char * text, const char lim, char*** words)
 short unsigned int
 textToInstruction( const char * text )
 {
+	const enum FORMATS instructionsFormat [] = { NNN, NNN, NNN, XNN, XNN, XY, XNN, XNN, XYN, XY, NNN, NNN, XNN, XYN, X, X };
 	char** words;
 	int wordCount = stringSplit(text,' ',&words);
-	unsigned short int op = getCode(words[0]);
-	int arguments[wordCount-1];
+	int op = getCode(words[0]);
+	if ( op == INVALID )
+	{
+		printf("Invalid Instruction: %s\n",words[0]);
+		exit(-1);
+	}
+	int arguments[4] = {0};
 	for (int i = 1; i < wordCount; i++)
 	{
 		arguments[i-1]=parseNumber(words[i]);
@@ -222,22 +240,34 @@ textToInstruction( const char * text )
 	printf(")\n");
 	unsigned char firstByte = op >> 12;
 	firstByte &= 0xF;
-	switch (wordCount-1)
+	int format = instructionsFormat[firstByte];
+	switch (format)
 	{
-		case 1:
-			unsigned short option = (arguments[0]) & 0x0FFF;
-			if (firstByte == 0xE || firstByte == 0xF)
-				option = ( arguments[0] & 0xF) << 8;
-			op |= option;
+		case NNN:
+			if (wordCount != 2)
+				printf("Invalid Argument Count: %d. Required: 1",wordCount-1);
+			op |= arguments[0] & 0xFFF;
 			break;
-		case 2:
-			op |= ( arguments[0] & 0xF ) <<8;
-			if ( firstByte == 0x3 || firstByte == 0x4 || firstByte == 0x6 || firstByte == 0x7 || firstByte == 0xC)
-				op |= ( arguments[1] & 0xFF );
-			else
-				op |= ( arguments[1] & 0xF ) <<4;
+		case X:
+			if (wordCount != 2)
+				printf("Invalid Argument Count: %d. Required: 1",wordCount-1);
+			op |= ( arguments[0] & 0xF ) << 8;
 			break;
-		case 3:
+		case XNN:
+			if (wordCount != 3)
+				printf("Invalid Argument Count: %d. Required: 2",wordCount-1);
+			op |= ( arguments[0] & 0xF  ) <<8;
+			op |= ( arguments[1] & 0xFF );
+			break;
+		case XY:
+			if (wordCount != 3)
+				printf("Invalid Argument Count: %d. Required: 2",wordCount-1);
+			op |= ( arguments[0] & 0xF  ) <<8;
+			op |= ( arguments[1] & 0xF ) <<4;
+			break;
+		case XYN:
+			if (wordCount != 4)
+				printf("Invalid Argument Count: %d. Required: 3",wordCount-1);
 			op |= ( arguments[0] & 0xF ) <<8;
 			op |= ( arguments[1] & 0xF ) <<4;
 			op |= ( arguments[2] & 0xF ) ;
@@ -273,6 +303,8 @@ assemble( const char* inputName, const char* outputName, int bigEndian )
 	destinationFile = fopen(outputName,"w");
 	for (int i = 0; i < n; i++) 
 	{
+		if (code[i][0] == '#' || code[i][0] == '\n')
+			continue;
 		unsigned short int instruction = textToInstruction(code[i]);
 		if (bigEndian)
 			instruction = swapEndianess(instruction);
