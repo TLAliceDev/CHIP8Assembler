@@ -55,6 +55,10 @@ DUMP X   : Stores V0-VX in Memory Starting at I (0xFX55)
 
 LOAD X   : Loads X Bytes of Data from Memory Starting at I, Storing in V0-VX (0xFX65)
 
+Comments can be added with \#
+
+Numbers can be represented using Binary, Octal, Decimal and Hexadecimal by starting the number with 0b, 0o, 0d, 0x respectively. By default numbers will be interpreted as decimal.
+
 
 # Register Operations:
 
