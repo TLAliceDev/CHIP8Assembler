@@ -68,13 +68,13 @@ int
 parseNumber(const char* str)
 {
 	const EnumMapper regOpTable [] ={{"ASSIGN",ASSIGN},{"BWORD",BWOR},{"BWAND",BWAND},{"BWXOR",BWXOR},{"ADD",ADD},{"SUB",SUB},{"LSHIFT",LSHIFT},{"NEGATE",NEGATE},{"RSHIFT",RSHIFT}};
-	int value;
 	int enumAttempt = wordToEnum(str, regOpTable, REGISTER_OPERATIONS_TABLE_SIZE);
 	if (enumAttempt != INVALID)
 	{
 		if (enumAttempt == RSHIFT) enumAttempt = 0xE;
 		return enumAttempt;
 	}
+	int value;
 	if (str[0] == '0') 
 	{
 		char *newString = malloc(sizeof(char)*strlen(str)-1);
@@ -187,7 +187,7 @@ stringSplit( const char * text, const char lim, char*** words)
 	{
 		currentChar = text[currentIndex];
 		currentWordSize++;
-		if (currentChar == lim)
+		if (currentChar == lim || currentChar == '\n')
 		{
 			(*words)[currentWordIndex] = malloc(sizeof(char)*currentWordSize);
 			strncpy((*words)[currentWordIndex], text+currentWordStartingPoint,currentWordSize);
@@ -256,7 +256,7 @@ swapEndianess(unsigned short int x)
 }
 
 int 
-assemble( const char* inputName, const char* outputName )
+assemble( const char* inputName, const char* outputName, int bigEndian )
 {
 	FILE* sourceFile, *destinationFile;
 	char code[1024][1024];
@@ -274,7 +274,8 @@ assemble( const char* inputName, const char* outputName )
 	for (int i = 0; i < n; i++) 
 	{
 		unsigned short int instruction = textToInstruction(code[i]);
-		instruction = swapEndianess(instruction);
+		if (bigEndian)
+			instruction = swapEndianess(instruction);
 		fwrite(&instruction,2,1,destinationFile);
 	}
 	fclose(destinationFile);
@@ -293,6 +294,9 @@ int main ( int argC, char **argV )
 		printf("Output file name not provided. Defaulting to cart.c8.\n");
 	else
 		out = argV[2];
-	assemble(argV[1], out);
+	int bigEndian = 1;
+	if (argC >= 4 && argV[3][0] == 'l')
+		bigEndian = 0;
+	assemble(argV[1], out, bigEndian);
 	return 0;
 }
