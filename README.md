@@ -85,3 +85,11 @@ LSHIFT: Sets VX to VX>>1
 NEGATE: Sets VX to VY-VX
 
 RSHIFT: Sets VX to VX<<1
+
+# Todo:
+
+~~Error Checking~~ 
+
+~~Comments~~
+
+Labels
