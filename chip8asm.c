@@ -340,7 +340,7 @@ assemble( const char* inputName, const char* outputName, int bigEndian )
 		if (code[i][0] != '#' && code[i][0] != '\n' && code[i][0] != '$') loc++;
 		if (code[i][0] == '$')
 		{
-			insertLabel(labelsIndex,labels,addresses,code[i],512+((loc+1)*2));
+			insertLabel(labelsIndex,labels,addresses,code[i],512+(loc*2));
 			labelsIndex++;
 		}
 	}
