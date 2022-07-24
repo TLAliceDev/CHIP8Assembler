@@ -214,9 +214,23 @@ stringSplit( const char * text, const char lim, char*** words)
 	return wordCount;
 }
 
+int
+parseLabel(char* labels[256], int addresses[256], char* label, int n)
+{
+	for (int i = 0; i < n; i++)
+	{
+		if (strcmp(labels[i],label) == 0)
+		{
+			return addresses[i];
+		}
+	}
+	printf("Couldn't find Label: %s\n",label);
+	exit(-2);
+	return INVALID;
+}
 
 short unsigned int
-textToInstruction( const char * text )
+textToInstruction( const char * text, char* labels[256], int addresses[256], int labelsAmount )
 {
 	const enum FORMATS instructionsFormat [] = { NNN, NNN, NNN, XNN, XNN, XY, XNN, XNN, XYN, XY, NNN, NNN, XNN, XYN, X, X };
 	char** words;
@@ -230,7 +244,14 @@ textToInstruction( const char * text )
 	int arguments[4] = {0};
 	for (int i = 1; i < wordCount; i++)
 	{
-		arguments[i-1]=parseNumber(words[i]);
+		if (words[i][0] == '$')
+		{
+			int labelAttempt = parseLabel(labels,addresses,words[i],labelsAmount);
+			if (labelAttempt != INVALID)
+				arguments[i-1] = labelAttempt;
+		}
+		else
+			arguments[i-1]=parseNumber(words[i]);
 	}
 	for (int i = 0; i < wordCount; i++)
 		printf("%s ",words[i]);
@@ -285,9 +306,21 @@ swapEndianess(unsigned short int x)
 	return (x>>8) | (x << 8);
 }
 
+void
+insertLabel(int index,char* labels[256], int addresses[256], char* labelName, int address)
+{
+	for (int i = 0; i < strlen(labelName)+1; i++)
+		if (labelName[i] == '\n') labelName[i]=0;
+	labels[index] = labelName;
+	addresses[index] = address;
+}
+
 int 
 assemble( const char* inputName, const char* outputName, int bigEndian )
 {
+	char* labels[256];
+	int   addresses[256] = {0};
+	int   labelsIndex = 0;
 	FILE* sourceFile, *destinationFile;
 	char code[1024][1024];
 	sourceFile = fopen(inputName, "r");
@@ -301,11 +334,20 @@ assemble( const char* inputName, const char* outputName, int bigEndian )
 		n++;
 	fclose(sourceFile);
 	destinationFile = fopen(outputName,"w");
+	int loc = 0;
+	for (int i = 0; i < n; i++)
+	{
+		if (code[i][0] != '#' && code[i][0] != '\n' && code[i][0] != '$') loc++;
+		if (code[i][0] == '$')
+		{
+			insertLabel(labelsIndex,labels,addresses,code[i],512+((loc+1)*2));
+			labelsIndex++;
+		}
+	}
 	for (int i = 0; i < n; i++) 
 	{
-		if (code[i][0] == '#' || code[i][0] == '\n')
-			continue;
-		unsigned short int instruction = textToInstruction(code[i]);
+		if (code[i][0] == '#' || code[i][0] == '\n' || code[i][0] == '$') continue;
+		unsigned short int instruction = textToInstruction(code[i], labels, addresses,labelsIndex);
 		if (bigEndian)
 			instruction = swapEndianess(instruction);
 		fwrite(&instruction,2,1,destinationFile);
