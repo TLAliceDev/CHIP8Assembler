@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define INSTRUCTION_TABLE_SIZE 26
+#define INSTRUCTION_TABLE_SIZE 28
 #define REGISTER_OPERATIONS_TABLE_SIZE 9
 #define INVALID (-1)
 
@@ -33,6 +33,8 @@ typedef enum
     SBCD,
     DUMP,
     LOAD,
+    RETN,
+    CLEAR
 } INST;
 
 typedef enum
@@ -136,9 +138,11 @@ wordCounter(const char* str, const char lim)
 int
 getCode( const char* word )
 {
-	const EnumMapper instructionsTable [] = {{"SYSC",SYSC},{"JUMP",JUMP},{"CALL",CALL},{"JNEM",JNEM},{"JEQM",JEQM},{"JEQU",JEQU},{"SETM",SETM},{"ADDM",ADDM},{"RGOP",RGOP},{"JNEQ",JNEQ},{"SETI",SETI},{"JMPV",JMPV},{"RAND",RAND},{"DRAW",DRAW},{"KEYD",KEYD},{"KEYU",KEYU},{"DGET",DGET},{"KGET",KGET},{"DSET",DSET},{"ASET",ASET},{"ADDI",ADDI},{"FONT",FONT},{"SBCD",SBCD},{"DUMP",DUMP},{"LOAD",LOAD}};
+	const EnumMapper instructionsTable [] = {{"SYSC",SYSC},{"JUMP",JUMP},{"CALL",CALL},{"JNEM",JNEM},{"JEQM",JEQM},{"JEQU",JEQU},{"SETM",SETM},{"ADDM",ADDM},{"RGOP",RGOP},{"JNEQ",JNEQ},{"SETI",SETI},{"JMPV",JMPV},{"RAND",RAND},{"DRAW",DRAW},{"KEYD",KEYD},{"KEYU",KEYU},{"DGET",DGET},{"KGET",KGET},{"DSET",DSET},{"ASET",ASET},{"ADDI",ADDI},{"FONT",FONT},{"SBCD",SBCD},{"DUMP",DUMP},{"LOAD",LOAD}, {"RETN", RETN}, {"CLEAR", CLEAR}};
 	INST op = wordToEnum( word, instructionsTable, INSTRUCTION_TABLE_SIZE );
 	if (op == INVALID) return INVALID;
+	if (op == RETN) return 0x00EE;
+	if (op == CLEAR) return 0x00E0;
 	int option = 0x000;
 	if (op == 0xE) option = 0x09E;
 	else if (op == 0xF)
@@ -241,6 +245,7 @@ textToInstruction( const char * text, char* labels[256], int addresses[256], int
 		printf("Invalid Instruction: %s\n",words[0]);
 		exit(-1);
 	}
+	if (op == 0x00EE || op == 0x00E0) return op;
 	int arguments[4] = {0};
 	for (int i = 1; i < wordCount; i++)
 	{
