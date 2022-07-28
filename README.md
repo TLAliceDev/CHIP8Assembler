@@ -63,7 +63,7 @@ Comments can be made by starting a line with a \#
 
 Numbers can be represented using Binary, Octal, Decimal and Hexadecimal by starting the number with 0b, 0o, 0d, 0x respectively. By default numbers will be interpreted as decimal.
 
-Labels can be created by starting a line with the $ character. You can access them with $LABEL_NAME
+Labels can be created by starting a line with the $ character. You can access them with $LABEL_NAME. You can add an offset to the label with $LABEL_NAME/offset. 
 
 
 # Register Operations:
