@@ -7,6 +7,10 @@ After compile, simply run it with the source file as its first argument. You can
 # Quick Reference:
 SYSC NNN : Syscall (0x0NNN).
 
+CLEAR: Clears the Screen (0x00E0).
+
+RETN: Return from sub-routine (0x00EE).
+
 JUMP NNN : Jump to address NNN (0x1NNN) 
 
 CALL NNN : Call subroutine NNN (0x2NNN) 
