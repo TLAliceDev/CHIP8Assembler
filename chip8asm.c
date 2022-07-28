@@ -123,7 +123,7 @@ int
 wordCounter(const char* str, const char lim)
 {
 	int n = 1;
-	char currentChar = 1;
+	char currentChar = lim+1;
 	int currentIndex = 0;
 	while ( currentChar != '\0' )
 	{
@@ -195,7 +195,7 @@ stringSplit( const char * text, const char lim, char*** words)
 	int wordCount = wordCounter(text, lim);
 	(*words) = malloc(sizeof(char*) * wordCount);
 	int currentIndex = 0;
-	int currentChar  = lim+1;
+	char currentChar;
 	int currentWordSize = -1;
 	int currentWordIndex = 0;
 	int currentWordStartingPoint = 0;
@@ -203,11 +203,11 @@ stringSplit( const char * text, const char lim, char*** words)
 	{
 		currentChar = text[currentIndex];
 		currentWordSize++;
-		if (currentChar == lim || currentChar == '\n')
+		if (currentChar == lim || currentChar == '\n' || currentChar == '\0')
 		{
 			(*words)[currentWordIndex] = malloc(sizeof(char)*currentWordSize);
 			strncpy((*words)[currentWordIndex], text+currentWordStartingPoint,currentWordSize);
-			(*words)[currentWordIndex][currentWordSize] = 0;
+			(*words)[currentWordIndex][currentWordSize] = '\0';
 			currentWordSize = 0;
 			currentWordIndex++;
 			currentIndex++;
@@ -221,11 +221,23 @@ stringSplit( const char * text, const char lim, char*** words)
 int
 parseLabel(char* labels[256], int addresses[256], char* label, int n)
 {
+	char** splitLabel;
+	int a = stringSplit(label, '/', &splitLabel);
 	for (int i = 0; i < n; i++)
 	{
-		if (strcmp(labels[i],label) == 0)
+		if (strcmp(labels[i],splitLabel[0]) == 0)
 		{
-			return addresses[i];
+			int len = strlen(splitLabel[1]);
+			free(splitLabel[0]);
+			int address = addresses[i];
+			if ( a > 1 )
+			{
+				int offset = parseNumber(splitLabel[1]);
+				address+=offset;
+				free(splitLabel[1]);
+			}
+			free(splitLabel);
+			return address;
 		}
 	}
 	printf("Couldn't find Label: %s\n",label);
