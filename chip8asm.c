@@ -77,9 +77,41 @@ wordToEnum (const char *str, const EnumMapper table[], int tableSize)
 }
 
 
-int 
-parseNumber(const char* str)
+
+typedef struct 
 {
+	char* symbols[256];
+	int   values[256];
+	int   index; 
+} SymbolTable;
+
+void
+freeSymbolTable(SymbolTable* table)
+{
+	for (int i = 0; i < table->index; i++)
+		if (table->symbols[i] != NULL)
+			free(table->symbols[i]);
+	free(table);
+}
+
+int parseConstant(const char* str, SymbolTable *constTable)
+{
+	for (int i = 0; i < constTable->index; i++)
+	{
+		if (strcmp(constTable->symbols[i],str) == 0)
+		{
+			return constTable->values[i];
+		}
+	}
+	printf("Couldn't find Constant: %s\n",str);
+	exit(-2);
+	return INVALID;
+}
+
+int 
+parseNumber(const char* str, SymbolTable *constTable)
+{
+	if (str[0] == '@') return parseConstant(str, constTable);
 	const EnumMapper regOpTable [] ={{"ASSIGN",ASSIGN},{"BWORD",BWOR},{"BWAND",BWAND},{"BWXOR",BWXOR},{"ADD",ADD},{"SUB",SUB},{"LSHIFT",LSHIFT},{"NEGATE",NEGATE},{"RSHIFT",RSHIFT}};
 	int enumAttempt = wordToEnum(str, regOpTable, REGISTER_OPERATIONS_TABLE_SIZE);
 	if (enumAttempt != INVALID)
@@ -219,20 +251,19 @@ stringSplit( const char * text, const char lim, char*** words)
 }
 
 int
-parseLabel(char* labels[256], int addresses[256], char* label, int n)
+parseLabel(char* label, SymbolTable *labelTable, SymbolTable* constTable)
 {
 	char** splitLabel;
 	int a = stringSplit(label, '/', &splitLabel);
-	for (int i = 0; i < n; i++)
+	for (int i = 0; i < labelTable->index; i++)
 	{
-		if (strcmp(labels[i],splitLabel[0]) == 0)
+		if (strcmp(labelTable->symbols[i],splitLabel[0]) == 0)
 		{
-			int len = strlen(splitLabel[1]);
 			free(splitLabel[0]);
-			int address = addresses[i];
+			int address = labelTable->values[i];
 			if ( a > 1 )
 			{
-				int offset = parseNumber(splitLabel[1]);
+				int offset = parseNumber(splitLabel[1], constTable);
 				address+=offset;
 				free(splitLabel[1]);
 			}
@@ -246,7 +277,7 @@ parseLabel(char* labels[256], int addresses[256], char* label, int n)
 }
 
 short unsigned int
-textToInstruction( const char * text, char* labels[256], int addresses[256], int labelsAmount )
+textToInstruction( const char * text, SymbolTable* labelTable, SymbolTable* constTable)
 {
 	const enum FORMATS instructionsFormat [] = { NNN, NNN, NNN, XNN, XNN, XY, XNN, XNN, XYN, XY, NNN, NNN, XNN, XYN, X, X };
 	char** words;
@@ -263,12 +294,12 @@ textToInstruction( const char * text, char* labels[256], int addresses[256], int
 	{
 		if (words[i][0] == '$')
 		{
-			int labelAttempt = parseLabel(labels,addresses,words[i],labelsAmount);
+			int labelAttempt = parseLabel(words[i],labelTable,constTable);
 			if (labelAttempt != INVALID)
 				arguments[i-1] = labelAttempt;
 		}
 		else
-			arguments[i-1]=parseNumber(words[i]);
+			arguments[i-1]=parseNumber(words[i],constTable);
 	}
 	for (int i = 0; i < wordCount; i++)
 		printf("%s ",words[i]);
@@ -324,20 +355,20 @@ swapEndianess(unsigned short int x)
 }
 
 void
-insertLabel(int index,char* labels[256], int addresses[256], char* labelName, int address)
+insertTable(SymbolTable* table, char* symbolName, int value)
 {
-	for (int i = 0; i < strlen(labelName)+1; i++)
-		if (labelName[i] == '\n') labelName[i]=0;
-	labels[index] = labelName;
-	addresses[index] = address;
+	table->symbols[table->index] = symbolName;
+	table->values[table->index] = value;
+	table->index++;
 }
 
 int 
 assemble( const char* inputName, const char* outputName, int bigEndian )
 {
-	char* labels[256];
-	int   addresses[256] = {0};
-	int   labelsIndex = 0;
+	SymbolTable* labelTable = malloc(sizeof(SymbolTable));
+	labelTable->index=0;
+	SymbolTable* constTable = malloc(sizeof(SymbolTable));
+	constTable->index=0;
 	FILE* sourceFile, *destinationFile;
 	char code[1024][1024];
 	sourceFile = fopen(inputName, "r");
@@ -351,24 +382,45 @@ assemble( const char* inputName, const char* outputName, int bigEndian )
 		n++;
 	fclose(sourceFile);
 	destinationFile = fopen(outputName,"w");
+	for (int i = 0; i < n; i++)
+	{
+		if (code[i][0] == '@')
+		{
+			char** split;
+			int number = stringSplit(code[i], ' ', &split);
+			if (number != 2)
+			{
+				printf("Error on line %d: Invalid Constant Declaration\n",i);
+				for (int x = 0; x < number; x++)
+					free(split[x]);
+				free(split);
+				exit(-3);
+			}
+			int value = parseNumber(split[1], constTable);
+			insertTable(constTable,split[0],value);
+		}
+	}
 	int loc = 0;
 	for (int i = 0; i < n; i++)
 	{
-		if (code[i][0] != '#' && code[i][0] != '\n' && code[i][0] != '$') loc++;
+		if (code[i][0] != '#' && code[i][0] != '\n' && code[i][0] != '$' && code[i][0] != '@') loc++;
 		if (code[i][0] == '$')
 		{
-			insertLabel(labelsIndex,labels,addresses,code[i],512+(loc*2));
-			labelsIndex++;
+			int len = strcspn(code[i],"\n");
+			char* word = malloc(sizeof(char)*len);
+			strncpy(word,code[i],len);
+			insertTable(labelTable,word,512+(loc*2));
 		}
 	}
 	for (int i = 0; i < n; i++) 
 	{
-		if (code[i][0] == '#' || code[i][0] == '\n' || code[i][0] == '$') continue;
-		unsigned short int instruction = textToInstruction(code[i], labels, addresses,labelsIndex);
-		if (bigEndian)
-			instruction = swapEndianess(instruction);
+		if (code[i][0] == '#' || code[i][0] == '\n' || code[i][0] == '$' || code[i][0] == '@') continue;
+		unsigned short int instruction = textToInstruction(code[i], labelTable, constTable);
+		if (bigEndian) instruction = swapEndianess(instruction);
 		fwrite(&instruction,2,1,destinationFile);
 	}
+	freeSymbolTable(constTable);
+	freeSymbolTable(labelTable);
 	fclose(destinationFile);
 	return 1;
 }
