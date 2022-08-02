@@ -94,6 +94,14 @@ freeSymbolTable(SymbolTable* table)
 	free(table);
 }
 
+void
+printSymbolTable(SymbolTable* table)
+{
+	for (int i = 0; i < table->index; i++)
+		if (table->symbols[i] != NULL)
+			printf("%s:%d\n",table->symbols[i],table->values[i]);
+}
+
 int parseConstant(const char* str, SymbolTable *constTable)
 {
 	for (int i = 0; i < constTable->index; i++)
@@ -122,9 +130,8 @@ parseNumber(const char* str, SymbolTable *constTable)
 	int value;
 	if (str[0] == '0') 
 	{
-		char *newString = malloc(sizeof(char)*strlen(str)-1);
+		char *newString = malloc(sizeof(char)*strlen(str));
 		strcpy(newString, str+2);
-		newString[strlen(str)-1] = '\0';
 		switch (str[1])
 		{
 			case 'x':
@@ -154,15 +161,16 @@ parseNumber(const char* str, SymbolTable *constTable)
 int
 wordCounter(const char* str, const char lim)
 {
-	int n = 1;
-	char currentChar = lim+1;
+	int n = 0;
+	char currentChar;
 	int currentIndex = 0;
-	while ( currentChar != '\0' )
+	do 
 	{
 		currentChar = str[currentIndex];
 		currentIndex++;
-		if (currentChar == lim) n++;
-	}
+		if (currentChar == lim || currentChar == '\0' || currentChar == '\n')
+			n++;
+	} while ( currentChar != '\0' && currentChar != '\n');
 	return n;
 }
 
@@ -226,25 +234,25 @@ stringSplit( const char * text, const char lim, char*** words)
 {
 	int wordCount = wordCounter(text, lim);
 	(*words) = malloc(sizeof(char*) * wordCount);
-	int currentIndex = 0;
+	int currentIndex = 0; 
 	char currentChar;
-	int currentWordSize = -1;
+	int currentWordSize = 0;
 	int currentWordIndex = 0;
 	int currentWordStartingPoint = 0;
 	while ( currentWordIndex < wordCount )
 	{
 		currentChar = text[currentIndex];
-		currentWordSize++;
-		if (currentChar == lim || currentChar == '\n' || currentChar == '\0')
+		if ( currentChar == lim || currentChar == '\n' || currentChar == '\0' )
 		{
-			(*words)[currentWordIndex] = malloc(sizeof(char)*currentWordSize);
+			(*words)[currentWordIndex] = malloc(sizeof(char)*currentWordSize+1);
 			strncpy((*words)[currentWordIndex], text+currentWordStartingPoint,currentWordSize);
 			(*words)[currentWordIndex][currentWordSize] = '\0';
-			currentWordSize = 0;
 			currentWordIndex++;
 			currentIndex++;
+			currentWordSize = 0;
 			currentWordStartingPoint = currentIndex;
 		}
+		currentWordSize++;
 		currentIndex++;
 	}
 	return wordCount;
@@ -259,15 +267,12 @@ parseLabel(char* label, SymbolTable *labelTable, SymbolTable* constTable)
 	{
 		if (strcmp(labelTable->symbols[i],splitLabel[0]) == 0)
 		{
-			free(splitLabel[0]);
 			int address = labelTable->values[i];
 			if ( a > 1 )
 			{
 				int offset = parseNumber(splitLabel[1], constTable);
 				address+=offset;
-				free(splitLabel[1]);
 			}
-			free(splitLabel);
 			return address;
 		}
 	}
@@ -398,8 +403,13 @@ assemble( const char* inputName, const char* outputName, int bigEndian )
 			}
 			int value = parseNumber(split[1], constTable);
 			insertTable(constTable,split[0],value);
+			for (int x = 1; x < number; x++)
+				free(split[x]);
+			free(split);
 		}
 	}
+	printf("Constants Table: \n");
+	printSymbolTable(constTable);
 	int loc = 0;
 	for (int i = 0; i < n; i++)
 	{
@@ -407,11 +417,14 @@ assemble( const char* inputName, const char* outputName, int bigEndian )
 		if (code[i][0] == '$')
 		{
 			int len = strcspn(code[i],"\n");
-			char* word = malloc(sizeof(char)*len);
+			char* word = malloc(sizeof(char)*len+1);
 			strncpy(word,code[i],len);
+			word[len] = '\0';
 			insertTable(labelTable,word,512+(loc*2));
 		}
 	}
+	printf("Labels Table: \n");
+	printSymbolTable(labelTable);
 	for (int i = 0; i < n; i++) 
 	{
 		if (code[i][0] == '#' || code[i][0] == '\n' || code[i][0] == '$' || code[i][0] == '@') continue;
@@ -419,9 +432,9 @@ assemble( const char* inputName, const char* outputName, int bigEndian )
 		if (bigEndian) instruction = swapEndianess(instruction);
 		fwrite(&instruction,2,1,destinationFile);
 	}
+	fclose(destinationFile);
 	freeSymbolTable(constTable);
 	freeSymbolTable(labelTable);
-	fclose(destinationFile);
 	return 1;
 }
 
