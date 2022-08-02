@@ -120,7 +120,7 @@ int
 parseNumber(const char* str, SymbolTable *constTable)
 {
 	if (str[0] == '@') return parseConstant(str, constTable);
-	const EnumMapper regOpTable [] ={{"ASSIGN",ASSIGN},{"BWORD",BWOR},{"BWAND",BWAND},{"BWXOR",BWXOR},{"ADD",ADD},{"SUB",SUB},{"LSHIFT",LSHIFT},{"NEGATE",NEGATE},{"RSHIFT",RSHIFT}};
+	const EnumMapper regOpTable [] ={{"ASSIGN",ASSIGN},{"BWOR",BWOR},{"BWAND",BWAND},{"BWXOR",BWXOR},{"ADD",ADD},{"SUB",SUB},{"LSHIFT",LSHIFT},{"NEGATE",NEGATE},{"RSHIFT",RSHIFT}};
 	int enumAttempt = wordToEnum(str, regOpTable, REGISTER_OPERATIONS_TABLE_SIZE);
 	if (enumAttempt != INVALID)
 	{
