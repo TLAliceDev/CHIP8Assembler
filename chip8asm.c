@@ -375,7 +375,7 @@ assemble( const char* inputName, const char* outputName, int bigEndian )
 	SymbolTable* constTable = malloc(sizeof(SymbolTable));
 	constTable->index=0;
 	FILE* sourceFile, *destinationFile;
-	char code[1024][1024];
+	char code[4096][1024];
 	sourceFile = fopen(inputName, "r");
 	if (sourceFile == NULL)
 	{
